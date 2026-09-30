@@ -37,41 +37,29 @@ def configure_optimizers(
     betas: Tuple[float, float] = (0.9, 0.95)
 ) -> torch.optim.Optimizer:
     """
-    Separates parameters that should experience weight decay (weights) from
-    those that should not (biases, LayerNorms, router gates).
+    Separates parameters that should experience weight decay (2D weights like Linear) from
+    those that should not (biases, LayerNorms, Embeddings). Handles tied weights gracefully.
     """
-    decay = set()
-    no_decay = set()
-    whitelist_weight_modules = (nn.Linear,)
-    blacklist_weight_modules = (nn.LayerNorm, nn.Embedding)
+    decay_params = []
+    no_decay_params = []
     
-    for mn, m in model.named_modules():
-        for pn, p in m.named_parameters():
-            fpn = f"{mn}.{pn}" if mn else pn
-            if pn.endswith("bias"):
-                no_decay.add(fpn)
-            elif pn.endswith("weight") and isinstance(m, whitelist_weight_modules):
-                decay.add(fpn)
-            elif pn.endswith("weight") and isinstance(m, blacklist_weight_modules):
-                no_decay.add(fpn)
-                
-    param_dict = {pn: p for pn, p in model.named_parameters()}
-    inter_params = decay & no_decay
-    union_params = decay | no_decay
-    assert len(inter_params) == 0, f"Parameters {inter_params} made it into both decay/no_decay sets!"
-    
-    # Any parameter not caught above defaults to decay
-    remaining = set(param_dict.keys()) - union_params
-    for r in remaining:
-        decay.add(r)
-        
+    for pn, p in model.named_parameters():
+        if not p.requires_grad:
+            continue
+        # 1D tensors (biases, layernorm weights) and embeddings should not have weight decay
+        if p.dim() < 2 or "norm" in pn.lower() or "ln" in pn.lower() or "emb" in pn.lower():
+            no_decay_params.append(p)
+        else:
+            decay_params.append(p)
+            
     optim_groups = [
-        {"params": [param_dict[pn] for pn in sorted(list(decay))], "weight_decay": weight_decay},
-        {"params": [param_dict[pn] for pn in sorted(list(no_decay))], "weight_decay": 0.0},
+        {"params": decay_params, "weight_decay": weight_decay},
+        {"params": no_decay_params, "weight_decay": 0.0},
     ]
     
     optimizer = torch.optim.AdamW(optim_groups, lr=learning_rate, betas=betas)
     return optimizer
+
 
 
 def get_lr_scheduler(optimizer: torch.optim.Optimizer, warmup_steps: int, max_steps: int, min_lr_ratio: float = 0.1):

@@ -53,3 +53,7 @@ venv.bak/
 *.log
 runs/
 wandb/
+
+# Large checkpoints
+checkpoints/
+
