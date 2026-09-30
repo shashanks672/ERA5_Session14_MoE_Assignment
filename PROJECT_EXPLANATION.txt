@@ -95,13 +95,20 @@ The output of the MoE layer is computed as:
 --------------------------------------------------------------------------------
 STEP 1: DATA PREPARATION & TOKENIZATION
 --------------------------------------------------------------------------------
-- Implemented `CharTokenizer`: Encodes text into unique character indices and decodes token IDs back into readable strings.
-- Implemented `TextDataset`: Contiguous sequence chunking with causal (X, Y) target shift:
-    Input X = chunk[0 : seq_len]
-    Target Y = chunk[1 : seq_len + 1]
-- Automatically downloads Tiny Shakespeare dataset (~1.1MB) with offline fallback.
-- Train/Validation split: 90% train, 10% validation.
-- DataLoader uses batch size = 32, sequence length = 128 tokens.
+- Implemented `CharTokenizer`: Character-level tokenization where each unique character represents 1 token.
+- Exact Dataset Metrics:
+  * Raw Dataset: Tiny Shakespeare (`input.txt`)
+  * Dataset File Size: 1,115,394 bytes (~1.064 MB / ~1.1 MB)
+  * Total Tokens in Dataset: 1,115,394 tokens (1,115,394 characters)
+  * Vocabulary Size (Unique Tokens): 65 unique characters (including letters, punctuation, whitespace, and newlines).
+  * Sequence Length / Context Window: 128 tokens per training chunk.
+  * Train Split (90%): 1,003,854 tokens (yielding 1,003,726 causal training slices of length 128)
+  * Validation Split (10%): 111,540 tokens (yielding 111,412 causal validation slices of length 128)
+- Causal Slicing Target Shift:
+    Input X = chunk[0 : 128]
+    Target Y = chunk[1 : 129]
+- DataLoader configuration: batch_size = 32, seq_len = 128 (i.e. 32 * 128 = 4,096 tokens processed per training step).
+
 
 --------------------------------------------------------------------------------
 STEP 2: DENSE BASELINE MODEL IMPLEMENTATION
