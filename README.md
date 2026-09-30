@@ -14,6 +14,7 @@ A self-contained, educational PyTorch implementation demonstrating the lifecycle
 
 ## Table of Contents
 - [Architecture Overview](#architecture-overview)
+- [Dataset & Tokenizer Statistics](#dataset--tokenizer-statistics)
 - [Mathematical Foundations](#mathematical-foundations)
   - [Top-$k$ Softmax Router](#1-top-k-softmax-router)
   - [Load-Balancing Auxiliary Loss](#2-load-balancing-auxiliary-loss)
@@ -28,6 +29,7 @@ A self-contained, educational PyTorch implementation demonstrating the lifecycle
 - [Expected Console Output & Verification](#expected-console-output--verification)
 - [Training Loss Visualization](#training-loss-visualization)
 - [CLI Reference](#cli-reference)
+- [Project Documentation Reference](#project-documentation-reference)
 
 ---
 
@@ -69,6 +71,31 @@ A self-contained, educational PyTorch implementation demonstrating the lifecycle
                 │                                              │ Sum
                 ▼                                              ▼
           Next Layer                                     Next Layer
+```
+
+---
+
+## Dataset & Tokenizer Statistics
+
+The model is trained on the classic **Tiny Shakespeare** corpus using character-level tokenization:
+
+| Metric | Value | Description |
+| :--- | :--- | :--- |
+| **Dataset Source** | Tiny Shakespeare (`data/input.txt`) | Raw English dramatic dialogue |
+| **Dataset File Size** | **1,115,394 bytes** (~1.064 MB / ~1.1 MB) | Total raw dataset text size |
+| **Tokenizer Type** | Character-level (`CharTokenizer`) | Direct mapping: 1 character = 1 token |
+| **Total Tokens in Dataset** | **1,115,394 tokens** | Exactly matches the character count |
+| **Vocabulary Size ($V$)** | **65 unique tokens** | Letters `a-z`, `A-Z`, punctuation, spaces & `\n` |
+| **Context Window ($T$)** | **128 tokens** | Maximum causal sequence length |
+| **Training Split (90%)** | **1,003,854 tokens** | Yields **1,003,726** training sequences ($L=128$) |
+| **Validation Split (10%)** | **111,540 tokens** | Yields **111,412** validation sequences ($L=128$) |
+| **Tokens per Batch Step** | **4,096 tokens** | Batch Size 32 $\times$ Context 128 |
+
+### Complete Vocabulary List (65 Tokens):
+```text
+\n (newline), ' ' (space), !, $, &, ', ,, -, ., 3, :, ;, ?
+A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+a b c d e f g h i j k l m n o p q r s t u v w x y z
 ```
 
 ---
@@ -132,11 +159,15 @@ With $d_{\text{model}} = 256$, $n_{\text{layers}} = 4$, $n_{\text{heads}} = 4$, 
 ## Repository Structure
 
 ```
-moe_assignment/
+ERA5_Session14_MoE_Assignment/
 ├── README.md                 # Complete documentation and verification guide
+├── PROJECT_EXPLANATION.txt   # Exhaustive step-by-step walkthrough & interview guide
 ├── requirements.txt          # Minimal dependencies (torch, matplotlib, numpy, tqdm)
 ├── run_pipeline.py           # Modular end-to-end execution pipeline
 ├── moe_assignment.py         # Self-contained, all-in-one standalone runnable script
+├── loss_curve.png            # Dual-panel loss curve plot (LM Loss + Aux Load Balancing)
+├── data/
+│   └── input.txt             # Tiny Shakespeare dataset (1,115,394 characters)
 ├── src/                      # Modular source package
 │   ├── __init__.py           # Package exports
 │   ├── model.py              # Dense Transformer, Causal MHA, Dense FFN
@@ -144,7 +175,6 @@ moe_assignment/
 │   ├── convert.py            # Surgical convert_dense_to_moe() weight transfer
 │   ├── dataset.py            # CharTokenizer, TextDataset, Tiny Shakespeare loader
 │   └── trainer.py            # Trainer loop, Cosine LR scheduler, loss plotting
-├── data/                     # Automatic dataset cache directory
 └── checkpoints/              # Saved model checkpoints (dense_model.pt, moe_model.pt)
 ```
 
@@ -309,3 +339,9 @@ The training pipeline generates `loss_curve.png` with two panels:
 | `--seq_len` | `int` | `128` | Sequence context length |
 | `--device` | `str` | `auto` | Execution device (`auto`, `cuda`, `mps`, `cpu`) |
 | `--plot_path` | `str` | `loss_curve.png` | Filepath for saving the final loss visualization |
+
+---
+
+## Project Documentation Reference
+
+For a complete conceptual and implementation walkthrough detailing architectural design decisions, loss curves, mathematical proofs, and interview preparation questions, see [PROJECT_EXPLANATION.txt](PROJECT_EXPLANATION.txt).
